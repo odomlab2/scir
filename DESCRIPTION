@@ -1,0 +1,24 @@
+Package: scir
+Type: Package
+Title: Analysis Toolkit Of Sci-RNA-seq Data
+Version: 0.1.0
+Authors@R: c(
+    person("Job", "van Riet", , "job.vanriet@dkfz.de", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-7767-7923"))
+  )
+Maintainer: Job van Riet <j.vanriet@dkfz.de>
+Description: Contains various functions for analyzing sci-RNA-Seqv3 data 
+    originating from the sci-rocket workflow.
+License: GPL-3 + file LICENSE
+BugReports: https://github.com/odomlab2/scir/issues
+Depends:
+    R (>= 4.2)
+Imports:
+    checkmate (>= 2.2.0),
+    dplyr (>= 1.1.2),
+    monocle3 (>= 1.3.1)
+Suggests:
+    ggplot2 (>= 3.4.2),
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.3
