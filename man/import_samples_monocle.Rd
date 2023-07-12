@@ -4,15 +4,17 @@
 \alias{import_samples_monocle}
 \title{import_samples_monocle}
 \usage{
-import_samples_monocle(samples, gtf)
+import_samples_monocle(folder, samples, gtf)
 }
 \arguments{
-\item{samples}{(character): Path(s) to STARSolo output folders (filtered).}
+\item{folder}{(character): Folder containing the results of STAR / STARSolo.}
+
+\item{samples}{(character): Samples to import (will search for files).}
 
 \item{gtf}{(character): Path to GTF file used during alignment and for annotation purposes.}
 }
 \value{
-(cell_data_set): Samples and annotations in monocle3 object.
+(cell_data_set): Cell_data_set containing all combined samples and annotations without further processing.
 }
 \description{
 Import one or multiple sci-RNA-seqv3 samples into a monocle3 object.
