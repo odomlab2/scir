@@ -22,6 +22,8 @@ Suggests:
     SummarizedExperiment, 
     rtracklayer,
     tibble,
+    ggtext,
+    plyr,
     S4Vectors,
     pbapply (>= 1.7.2),
     futile.logger (>= 1.4.3),

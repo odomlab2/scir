@@ -62,38 +62,27 @@ import_samples_monocle <- function(folder, samples, gtf) {
     cds_samples <- pbapply::pblapply(unique(files$sample), function(current_sample) {
         futile.logger::flog.info("\t%s", current_sample)
 
-        tryCatch({
-
-            # Generate initial cell_data_set.
-            cds <- monocle3::load_mm_data(
-                mat_path = files %>% dplyr::filter(sample == current_sample, file == "matrix.mtx") %>% dplyr::pull(.data$path),
-                feature_anno_path = files %>% dplyr::filter(sample == current_sample, file == "features.tsv") %>% dplyr::pull(.data$path),
-                cell_anno_path = files %>% dplyr::filter(sample == current_sample, file == "barcodes_converted.tsv") %>% dplyr::pull(.data$path),
-                feature_metadata_column_names = c("gene_short_name", "type")
-            )
+        # Generate initial cell_data_set.
+        cds <- monocle3::load_mm_data(
+            mat_path = files %>% dplyr::filter(sample == current_sample, file == "matrix.mtx") %>% dplyr::pull(.data$path),
+            feature_anno_path = files %>% dplyr::filter(sample == current_sample, file == "features.tsv") %>% dplyr::pull(.data$path),
+            cell_anno_path = files %>% dplyr::filter(sample == current_sample, file == "barcodes_converted.tsv") %>% dplyr::pull(.data$path),
+            feature_metadata_column_names = c("gene_short_name", "type")
+        )
 
 
-            # Add additional metadata from the GTF.
-            SummarizedExperiment::rowData(cds) <- SummarizedExperiment::rowData(cds) %>%
-                tibble::as_tibble(rownames = "gene_id") %>%
-                dplyr::left_join(data_gtf, by = "gene_id") %>%
-                tibble::column_to_rownames("gene_id") %>%
-                S4Vectors::DataFrame()
+        # Add additional metadata from the GTF.
+        SummarizedExperiment::rowData(cds) <- SummarizedExperiment::rowData(cds) %>%
+            tibble::as_tibble(rownames = "gene_id") %>%
+            dplyr::left_join(data_gtf, by = "gene_id") %>%
+            tibble::column_to_rownames("gene_id") %>%
+            S4Vectors::DataFrame()
 
-            # Add the sample_name as metadata.
-            SummarizedExperiment::colData(cds)$sample_name <- base::factor(current_sample)
+        # Add the sample_name as metadata.
+        SummarizedExperiment::colData(cds)$sample_name <- base::factor(current_sample)
 
-            return(cds)
-
-        },
-        error=function(cond) {
-            return(NULL)
-        })
-
+        return(cds)
     }, cl = 10)
-
-    # Remove the NULL objects.
-    cds_samples <- plyr::compact(cds_samples)
 
     # Add the names to the list.
     base::names(cds_samples) <- base::vapply(cds_samples, FUN = function(x) {
