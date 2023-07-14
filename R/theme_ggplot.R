@@ -5,7 +5,7 @@
 #' @export
 theme_ggplot <- function(){
     ggplot2::theme(
-        text = ggplot2::element_text(family = "Roboto"),
+        text = ggplot2::element_text(),
         axis.text = ggplot2::element_text(size = 9),
         axis.title.x = ggtext::element_markdown(size = 12, face = "bold"),
         axis.title.y = ggtext::element_markdown(size = 12, face = "bold"),

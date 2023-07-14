@@ -42,12 +42,14 @@ plot_umap <- monocle3::plot_cells(
     cds = sx42_nonorm,
     reduction_method = "UMAP",
     label_cell_groups = FALSE,
-    color_cells_by = "sample",
-    cell_size = .2,
-    rasterize = TRUE,
-    cell_stroke = .2,
+    color_cells_by = "group",
+    cell_size = .4,
+    rasterize = FALSE,
+    cell_stroke = .1, alpha = .1,
     show_trajectory_graph = FALSE,
 ) +
-    ggplot2::labs(x = "UMAP - Dim. 1", y = "UMAP - Dim. 2")
+    ggplot2::labs(x = "UMAP - Dim. 1", y = "UMAP - Dim. 2") +
+    ggplot2::scale_color_manual(values = c('grey50', '#E5193A', '#0AB066', '#526AB0', '#FE9639')) +
+    scir::theme_ggplot()
 
-ggplot2::ggsave(filename = '~/test/umap_sx42.tiff', plot = plot_umap + ggplot2::facet_grid(~group), units="px", width = 1800, height = 600, device='tiff', dpi=100)
+ggplot2::ggsave(filename = '~/test/umap_sx42.pdf', plot = plot_umap + ggplot2::facet_wrap(~group), units="px", width = 3000, height = 1500, device='pdf', dpi=200)
