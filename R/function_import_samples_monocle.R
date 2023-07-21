@@ -59,7 +59,7 @@ import_samples_monocle <- function(folder, samples, gtf) {
 
     futile.logger::flog.info("import_samples_monocle: Generating cell_data_set object for %s samples", dplyr::n_distinct(files$sample))
 
-    cds_samples <- pbapply::pblapply(unique(files$sample), function(current_sample) {
+    cds_samples <- future.apply::future_lapply(unique(files$sample), function(current_sample) {
         futile.logger::flog.info("\t%s", current_sample)
 
         # Generate initial cell_data_set.
@@ -82,7 +82,7 @@ import_samples_monocle <- function(folder, samples, gtf) {
         SummarizedExperiment::colData(cds)$sample_name <- base::factor(current_sample)
 
         return(cds)
-    }, cl = 10)
+    })
 
     # Add the names to the list.
     base::names(cds_samples) <- base::vapply(cds_samples, FUN = function(x) {
