@@ -1,7 +1,8 @@
-#' @title import_samples_monocle
-#' @description Import one or multiple sci-RNA-seqv3 samples into a monocle3 object.
+#' @title Import STARSolo raw matrices.
+#' @description Import one or multiple sci-RNA-seqv3 STARSolo (raw) matrices into
+#' a combined cds object with correct gene-annotations.
 #'
-#' @param folder (character): Folder containing the results of STAR / STARSolo.
+#' @param folder (character): Folder containing the results of STAR / STARSolo (raw and GeneFull).
 #' @param samples (character): Samples to import (will search for files).
 #' @param gtf (character): Path to GTF file used during alignment and for annotation purposes.
 #'
@@ -20,7 +21,7 @@ import_samples_monocle <- function(folder, samples, gtf) {
 
     # Retrieve  the required files. ----
 
-    futile.logger::flog.info("import_samples_monocle - Retrieving files.")
+    futile.logger::flog.info("import_samples_monocle: Retrieving files.")
 
     files <- tibble::tibble(
         path = list.files(folder, pattern = "barcodes_converted.tsv$|features.tsv$|matrix.mtx$", recursive = TRUE, full.names = TRUE)
@@ -42,7 +43,7 @@ import_samples_monocle <- function(folder, samples, gtf) {
 
     # Retrieve the GTF file. ----
 
-    futile.logger::flog.info("import_samples_monocle - Retrieving and processing GTF file.")
+    futile.logger::flog.info("import_samples_monocle: Retrieving and processing GTF file.")
 
     data_gtf <- rtracklayer::import(gtf, format = "gff") %>%
         tibble::as_tibble() %>%
@@ -67,9 +68,13 @@ import_samples_monocle <- function(folder, samples, gtf) {
             mat_path = files %>% dplyr::filter(sample == current_sample, file == "matrix.mtx") %>% dplyr::pull(.data$path),
             feature_anno_path = files %>% dplyr::filter(sample == current_sample, file == "features.tsv") %>% dplyr::pull(.data$path),
             cell_anno_path = files %>% dplyr::filter(sample == current_sample, file == "barcodes_converted.tsv") %>% dplyr::pull(.data$path),
-            feature_metadata_column_names = c("gene_short_name", "type")
+            feature_metadata_column_names = c("gene_short_name", "type"),
+            umi_cutoff = 0
         )
 
+        # Remove zero-counts and redo size-factors.
+        cds <- cds[, Matrix::colSums(monocle3::exprs(cds)) != 0]
+        cds <- monocle3::estimate_size_factors(cds)
 
         # Add additional metadata from the GTF.
         SummarizedExperiment::rowData(cds) <- SummarizedExperiment::rowData(cds) %>%
