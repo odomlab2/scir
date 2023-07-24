@@ -2,12 +2,12 @@
 % Please edit documentation in R/function_import_samples_monocle.R
 \name{import_samples_monocle}
 \alias{import_samples_monocle}
-\title{Import STARSolo raw matrices.}
+\title{Import STARSolo results into monocle3.}
 \usage{
 import_samples_monocle(folder, samples, gtf)
 }
 \arguments{
-\item{folder}{(character): Folder containing the results of STAR / STARSolo (raw and GeneFull).}
+\item{folder}{(character): Folder containing the results of STAR / STARSolo (GeneFull/filtered).}
 
 \item{samples}{(character): Samples to import (will search for files).}
 
@@ -17,7 +17,7 @@ import_samples_monocle(folder, samples, gtf)
 (cell_data_set): Cell_data_set containing all combined samples and annotations without further processing.
 }
 \description{
-Import one or multiple sci-RNA-seqv3 STARSolo (raw) matrices into
+Import one or multiple sci-RNA-seqv3 STARSolo (filtered) matrices into
 a combined cds object with correct gene-annotations.
 }
 \examples{

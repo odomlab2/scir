@@ -1,8 +1,8 @@
-#' @title Import STARSolo raw matrices.
-#' @description Import one or multiple sci-RNA-seqv3 STARSolo (raw) matrices into
+#' @title Import STARSolo results into monocle3.
+#' @description Import one or multiple sci-RNA-seqv3 STARSolo (filtered) matrices into
 #' a combined cds object with correct gene-annotations.
 #'
-#' @param folder (character): Folder containing the results of STAR / STARSolo (raw and GeneFull).
+#' @param folder (character): Folder containing the results of STAR / STARSolo (GeneFull/filtered).
 #' @param samples (character): Samples to import (will search for files).
 #' @param gtf (character): Path to GTF file used during alignment and for annotation purposes.
 #'

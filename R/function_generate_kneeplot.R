@@ -67,7 +67,7 @@ plot_kneeplot <- function(folder, samples, umi_threshold = NULL) {
         # Retrieve total UMI count per cell. ----
         data_umi <- readr::read_tsv(path_umi, col_names = "n_umi", col_types = "i") %>%
             # Add UMI rank.
-            dplyr::mutate(rank_umi = dplyr::min_rank(-n_umi))
+            dplyr::mutate(rank_umi = dplyr::min_rank(- n_umi))
 
         # Generate knee-plot ----
         plot_knee <- ggplot2::ggplot(data_umi, ggplot2::aes(x = rank_umi, y = n_umi)) +
@@ -78,14 +78,16 @@ plot_kneeplot <- function(folder, samples, umi_threshold = NULL) {
             ggplot2::labs(x = "Barcodes<br><sub>(Ranked on no. of UMI)</sub>", y = "No. of UMI") +
             ggplot2::geom_hline(yintercept = star_cutoff, lwd = .5, lty = 11, color = "red") +
             ggplot2::annotate("text", x = 100, y = star_cutoff * .75, size = 3, label = glue::glue("Threshold: {star_cutoff}"), color = "red") +
-            ggplot2::annotate("text", x = Inf, y = Inf, size = 3, label = glue::glue("Sample: {current_sample}\nTotal barcodes: {dim(data_umi)[1]}\nAfter filtering: {sum(data_umi$n_umi >= star_cutoff)}"), vjust = 1, hjust = 1) +
+            ggplot2::annotate("text", x = Inf, y = Inf, size = 3, , vjust = 1, hjust = 1, 
+            label = glue::glue("Sample: {current_sample}\nTotal barcodes: {dim(data_umi)[1]}\nAfter filtering: {sum(data_umi$n_umi >= star_cutoff)}"), vjust = 1, hjust = 1) +
             scir::theme_ggplot()
 
         if (!is.null(umi_threshold)) {
             plot_knee <- plot_knee +
                 ggplot2::geom_hline(yintercept = umi_threshold, lwd = .5, lty = 11, color = "darkblue") +
                 ggplot2::annotate("text", x = 100, y = umi_threshold * .75, size = 3, label = glue::glue("Threshold (manual): {umi_threshold}"), color = "darkblue") +
-                ggplot2::annotate("text", x = Inf, y = Inf, size = 3, label = glue::glue("Sample: {current_sample}\nTotal barcodes: {dim(data_umi)[1]}\nAfter filtering: {sum(data_umi$n_umi >= star_cutoff)}\nAfter filtering (Custom): {sum(data_umi$n_umi >= umi_threshold)}"), vjust = 1, hjust = 1)
+                ggplot2::annotate("text", x = Inf, y = Inf, size = 3, vjust = 1, hjust = 1,
+                label = glue::glue("Sample: {current_sample}\nTotal barcodes: {dim(data_umi)[1]}\nAfter filtering: {sum(data_umi$n_umi >= star_cutoff)}\nAfter filtering (Custom): {sum(data_umi$n_umi >= umi_threshold)}"))
         }
 
         # Visualize progress bar.
