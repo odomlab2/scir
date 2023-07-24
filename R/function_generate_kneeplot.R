@@ -89,7 +89,7 @@ plot_kneeplot <- function(folder, samples, umi_threshold = NULL) {
         }
 
         # Visualize progress bar.
-        p(sprintf("%s", current_sample))
+        p(base::sprintf("%s", current_sample))
 
         # Return plot.
         return(plot_knee)

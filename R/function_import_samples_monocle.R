@@ -60,6 +60,7 @@ import_samples_monocle <- function(folder, samples, gtf) {
 
     futile.logger::flog.info("import_samples_monocle: Generating cell_data_set object for %s samples", dplyr::n_distinct(files$sample))
 
+    p <- progressr::progressor(along = unique(files$sample))
     cds_samples <- future.apply::future_lapply(unique(files$sample), function(current_sample) {
         futile.logger::flog.info("\t%s", current_sample)
 
@@ -69,12 +70,9 @@ import_samples_monocle <- function(folder, samples, gtf) {
             feature_anno_path = files %>% dplyr::filter(sample == current_sample, file == "features.tsv") %>% dplyr::pull(.data$path),
             cell_anno_path = files %>% dplyr::filter(sample == current_sample, file == "barcodes_converted.tsv") %>% dplyr::pull(.data$path),
             feature_metadata_column_names = c("gene_short_name", "type"),
+            # Use all cells based on the STARSolo threshold.
             umi_cutoff = 0
         )
-
-        # Remove zero-counts and redo size-factors.
-        cds <- cds[, Matrix::colSums(monocle3::exprs(cds)) != 0]
-        cds <- monocle3::estimate_size_factors(cds)
 
         # Add additional metadata from the GTF.
         SummarizedExperiment::rowData(cds) <- SummarizedExperiment::rowData(cds) %>%
@@ -86,8 +84,11 @@ import_samples_monocle <- function(folder, samples, gtf) {
         # Add the sample_name as metadata.
         SummarizedExperiment::colData(cds)$sample_name <- base::factor(current_sample)
 
+        # Visualize progress bar.
+        p(base::sprintf("%s", current_sample))
+
         return(cds)
-    })
+    }, future.seed = TRUE)
 
     # Add the names to the list.
     base::names(cds_samples) <- base::vapply(cds_samples, FUN = function(x) {
@@ -95,6 +96,7 @@ import_samples_monocle <- function(folder, samples, gtf) {
     }, "")
 
     # Combine samples.
+    futile.logger::flog.info("import_samples_monocle: Combining into a single cell_data_set.")
     cds_combined <- monocle3::combine_cds(cds_samples)
     SummarizedExperiment::colData(cds_combined)$sample_name <- NULL
 
