@@ -6,9 +6,9 @@
 theme_ggplot <- function(){
     ggplot2::theme(
         text = ggplot2::element_text(),
-        axis.text = ggplot2::element_text(size = 9),
-        axis.title.x = ggtext::element_markdown(size = 12, face = "bold"),
-        axis.title.y = ggtext::element_markdown(size = 12, face = "bold"),
+        axis.text = ggtext::element_markdown(size = 8),
+        axis.title.x = ggtext::element_markdown(size = 10, face = "bold"),
+        axis.title.y = ggtext::element_markdown(size = 10, face = "bold"),
         legend.title = ggplot2::element_text(face = "bold"),
         legend.text = ggplot2::element_text(size = 10),
         legend.position = "bottom",

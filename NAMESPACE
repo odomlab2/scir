@@ -3,5 +3,7 @@
 export(import_samples_monocle)
 export(plot_kneeplot)
 export(theme_ggplot)
+import(future)
 import(ggplot2)
+import(progressr)
 importFrom(dplyr,"%>%")

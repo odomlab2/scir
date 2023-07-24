@@ -13,9 +13,12 @@
 #' @return (list): List of ggplot2 objects.
 #'
 #' @importFrom dplyr %>%
+#' @import future
+#' @import progressr
 #' @import ggplot2
 #' @export
 plot_kneeplot <- function(folder, samples, umi_threshold = NULL) {
+
     # Input validation ----
     checkmate::assertAccess(folder, access = "r")
     checkmate::assertCharacter(samples)
@@ -29,7 +32,7 @@ plot_kneeplot <- function(folder, samples, umi_threshold = NULL) {
 
     files <- files %>%
         # Only use the Filtered data.
-        dplyr::filter(base::grepl("GeneFull/filtered/", .data$path) | grepl("UMIperCellSorted.txt", .data$path)) %>%
+        dplyr::filter(base::grepl("GeneFull/filtered/", .data$path) | base::grepl("UMIperCellSorted.txt", .data$path)) %>%
         # Retrieve features from files.
         dplyr::mutate(
             # Retrieve the sample name from the path.
@@ -41,9 +44,12 @@ plot_kneeplot <- function(folder, samples, umi_threshold = NULL) {
         # Filter the specified samples.
         dplyr::filter(.data$sample %in% samples)
 
+    futile.logger::flog.info(glue::glue("plot_kneeplot: Generating for {dplyr::n_distinct(files$sample)} samples"))
 
+    # For each sample, generate knee-plot by reading the filtered UMI counts and raw matrix (to determine STARSolo threshold.)
+    p <- progressr::progressor(along = unique(files$sample))
     knee_samples <- future.apply::future_lapply(unique(files$sample), function(current_sample) {
-        futile.logger::flog.info(glue::glue("plot_kneeplot: Generating for {current_sample}"))
+        futile.logger::flog.debug(glue::glue("plot_kneeplot: Working on {current_sample}"))
 
         # Retrieve the required paths.
         path_matrix <- files %>%
@@ -71,19 +77,23 @@ plot_kneeplot <- function(folder, samples, umi_threshold = NULL) {
             ggplot2::annotation_logticks(sides = "lb", scaled = TRUE) +
             ggplot2::labs(x = "Barcodes<br><sub>(Ranked on no. of UMI)</sub>", y = "No. of UMI") +
             ggplot2::geom_hline(yintercept = star_cutoff, lwd = .5, lty = 11, color = "red") +
-            ggplot2::annotate("text", x = 100, y = star_cutoff * .75, label = glue::glue("Threshold: {star_cutoff}"), color = "red") +
+            ggplot2::annotate("text", x = 100, y = star_cutoff * .75, size = 3, label = glue::glue("Threshold: {star_cutoff}"), color = "red") +
             ggplot2::annotate("text", x = Inf, y = Inf, size = 3, label = glue::glue("Sample: {current_sample}\nTotal barcodes: {dim(data_umi)[1]}\nAfter filtering: {sum(data_umi$n_umi >= star_cutoff)}"), vjust = 1, hjust = 1) +
             scir::theme_ggplot()
 
         if (!is.null(umi_threshold)) {
             plot_knee <- plot_knee +
                 ggplot2::geom_hline(yintercept = umi_threshold, lwd = .5, lty = 11, color = "darkblue") +
-                ggplot2::annotate("text", x = 100, y = umi_threshold * .75, label = glue::glue("Threshold (manual): {umi_threshold}"), color = "darkblue") +
+                ggplot2::annotate("text", x = 100, y = umi_threshold * .75, size = 3, label = glue::glue("Threshold (manual): {umi_threshold}"), color = "darkblue") +
                 ggplot2::annotate("text", x = Inf, y = Inf, size = 3, label = glue::glue("Sample: {current_sample}\nTotal barcodes: {dim(data_umi)[1]}\nAfter filtering: {sum(data_umi$n_umi >= star_cutoff)}\nAfter filtering (Custom): {sum(data_umi$n_umi >= umi_threshold)}"), vjust = 1, hjust = 1)
         }
 
+        # Visualize progress bar.
+        p(sprintf("%s", current_sample))
+
+        # Return plot.
         return(plot_knee)
-    })
+    }, future.seed = TRUE)
 
     return(knee_samples)
 }
