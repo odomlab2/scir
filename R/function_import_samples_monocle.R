@@ -62,7 +62,6 @@ import_samples_monocle <- function(folder, samples, gtf) {
 
     p <- progressr::progressor(along = unique(files$sample))
     cds_samples <- future.apply::future_lapply(unique(files$sample), function(current_sample) {
-        futile.logger::flog.info("\t%s", current_sample)
 
         # Generate initial cell_data_set.
         cds <- monocle3::load_mm_data(
@@ -97,7 +96,7 @@ import_samples_monocle <- function(folder, samples, gtf) {
 
     # Combine samples.
     futile.logger::flog.info("import_samples_monocle: Combining into a single cell_data_set.")
-    cds_combined <- monocle3::combine_cds(cds_samples)
+    cds_combined <- monocle3::combine_cds(cds_samples, keep_all_genes = FALSE)
     SummarizedExperiment::colData(cds_combined)$sample_name <- NULL
 
     # Return combined samples.

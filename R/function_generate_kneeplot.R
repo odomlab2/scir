@@ -78,17 +78,19 @@ plot_kneeplot <- function(folder, samples, umi_threshold = NULL) {
             ggplot2::labs(x = "Barcodes<br><sub>(Ranked on no. of UMI)</sub>", y = "No. of UMI") +
             ggplot2::geom_hline(yintercept = star_cutoff, lwd = .5, lty = 11, color = "red") +
             ggplot2::annotate("text", x = 100, y = star_cutoff * .75, size = 3, label = glue::glue("Threshold: {star_cutoff}"), color = "red") +
-            ggplot2::annotate("text", x = Inf, y = Inf, size = 3, , vjust = 1, hjust = 1, 
-            label = glue::glue("Sample: {current_sample}\nTotal barcodes: {dim(data_umi)[1]}\nAfter filtering: {sum(data_umi$n_umi >= star_cutoff)}"), vjust = 1, hjust = 1) +
-            scir::theme_ggplot()
+            ggplot2::annotate("text", x = Inf, y = Inf, size = 3, vjust = 1, hjust = 1,
+                              label = glue::glue("Sample: {current_sample}\nTotal barcodes: {dim(data_umi)[1]}\nAfter filtering: {sum(data_umi$n_umi >= star_cutoff)}"))
 
         if (!is.null(umi_threshold)) {
             plot_knee <- plot_knee +
                 ggplot2::geom_hline(yintercept = umi_threshold, lwd = .5, lty = 11, color = "darkblue") +
                 ggplot2::annotate("text", x = 100, y = umi_threshold * .75, size = 3, label = glue::glue("Threshold (manual): {umi_threshold}"), color = "darkblue") +
                 ggplot2::annotate("text", x = Inf, y = Inf, size = 3, vjust = 1, hjust = 1,
-                label = glue::glue("Sample: {current_sample}\nTotal barcodes: {dim(data_umi)[1]}\nAfter filtering: {sum(data_umi$n_umi >= star_cutoff)}\nAfter filtering (Custom): {sum(data_umi$n_umi >= umi_threshold)}"))
+                                  label = glue::glue("Sample: {current_sample}\nTotal barcodes: {dim(data_umi)[1]}\nAfter filtering: {sum(data_umi$n_umi >= star_cutoff)}\nAfter filtering (Custom): {sum(data_umi$n_umi >= umi_threshold)}"))
         }
+
+        # Add the ggplot theme.
+        plot_knee <- plot_knee + scir::theme_ggplot()
 
         # Visualize progress bar.
         p(base::sprintf("%s", current_sample))
