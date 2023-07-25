@@ -108,8 +108,8 @@ import_samples_monocle <- function(folder, samples, gtf, metadata = NULL) {
         futile.logger::flog.info("import_samples_monocle: Adding metadata.")
 
         # Add the metadata to the cds object.
-        monocle3::pData(cds) <- S4Vectors::merge(monocle3::pData(cds), metadata, by.x = 'sample', by.y = 'sample_name', all.x = TRUE)
-        base::rownames(monocle3::pData(cds)) <- base::sprintf("%s_%s", monocle3::pData(cds)$cell, monocle3::pData(cds)$sample)
+        monocle3::pData(cds_combined) <- S4Vectors::merge(monocle3::pData(cds_combined), metadata, by.x = 'sample', by.y = 'sample_name', all.x = TRUE)
+        base::rownames(monocle3::pData(cds_combined)) <- base::sprintf("%s_%s", monocle3::pData(cds_combined)$cell, monocle3::pData(cds_combined)$sample)
     }
 
     # Return combined samples.
