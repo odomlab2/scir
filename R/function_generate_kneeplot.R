@@ -1,6 +1,6 @@
 #' @title Generates knee-plot for one or multiple samples based on STARSolo.
 #' @description Imports the No. of UMI per barcode and generates a knee-plot.
-#' The selected threshol of STARSolo will be visualized, an alternative threshold
+#' The selected threshold of STARSolo will be visualized, an alternative threshold
 #' can be specified to visualize this alternative compared to current threshold.
 #'
 #' @param folder (character): Folder containing the results of STAR / STARSolo.

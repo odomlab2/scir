@@ -27,6 +27,7 @@ Imports:
     readr,
     rtracklayer,
     S4Vectors,
+    scales,
     SummarizedExperiment,
     tibble
 Encoding: UTF-8

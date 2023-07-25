@@ -2,6 +2,7 @@
 
 export(import_samples_monocle)
 export(plot_kneeplot)
+export(plot_screeplot)
 export(theme_ggplot)
 import(future)
 import(ggplot2)

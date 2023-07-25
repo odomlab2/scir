@@ -5,6 +5,7 @@
 #' @param folder (character): Folder containing the results of STAR / STARSolo (GeneFull/filtered).
 #' @param samples (character): Samples to import (will search for files).
 #' @param gtf (character): Path to GTF file used during alignment and for annotation purposes.
+#' @param metadata (tibble): Additional metadata to add to cell_data_set. Should contain a sample_name column.
 #'
 #' @examples
 #' 1 + 1
@@ -13,11 +14,14 @@
 #'
 #' @importFrom dplyr %>%
 #' @export
-import_samples_monocle <- function(folder, samples, gtf) {
+import_samples_monocle <- function(folder, samples, gtf, metadata = NULL) {
     # Input validation ----
     checkmate::assertAccess(folder, access = "r")
     checkmate::assertCharacter(samples)
     checkmate::assertFileExists(gtf, access = "r")
+    checkmate::assertTibble(metadata, null.ok = TRUE)
+
+    if(!is.null(metadata) & is.null(metadata$sample_name)) stop("metadata should contain a column: sample_name")
 
     # Retrieve  the required files. ----
 
@@ -98,6 +102,15 @@ import_samples_monocle <- function(folder, samples, gtf) {
     futile.logger::flog.info("import_samples_monocle: Combining into a single cell_data_set.")
     cds_combined <- monocle3::combine_cds(cds_samples, keep_all_genes = FALSE)
     SummarizedExperiment::colData(cds_combined)$sample_name <- NULL
+
+    # Add metadata.
+    if(!is.null(metadata)){
+        futile.logger::flog.info("import_samples_monocle: Adding metadata.")
+
+        # Add the metadata to the cds object.
+        monocle3::pData(cds) <- S4Vectors::merge(monocle3::pData(cds), metadata, by.x = 'sample', by.y = 'sample_name', all.x = TRUE)
+        base::rownames(monocle3::pData(cds)) <- base::sprintf("%s_%s", monocle3::pData(cds)$cell, monocle3::pData(cds)$sample)
+    }
 
     # Return combined samples.
     return(cds_combined)

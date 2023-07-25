@@ -4,7 +4,7 @@
 \alias{import_samples_monocle}
 \title{Import STARSolo results into monocle3.}
 \usage{
-import_samples_monocle(folder, samples, gtf)
+import_samples_monocle(folder, samples, gtf, metadata = NULL)
 }
 \arguments{
 \item{folder}{(character): Folder containing the results of STAR / STARSolo (GeneFull/filtered).}
@@ -12,6 +12,8 @@ import_samples_monocle(folder, samples, gtf)
 \item{samples}{(character): Samples to import (will search for files).}
 
 \item{gtf}{(character): Path to GTF file used during alignment and for annotation purposes.}
+
+\item{metadata}{(tibble): Additional metadata to add to cell_data_set. Should contain a sample_name column.}
 }
 \value{
 (cell_data_set): Cell_data_set containing all combined samples and annotations without further processing.
