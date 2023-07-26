@@ -21,7 +21,7 @@ import_samples_monocle <- function(folder, samples, gtf, metadata = NULL) {
     checkmate::assertFileExists(gtf, access = "r")
     checkmate::assertTibble(metadata, null.ok = TRUE)
 
-    if(!is.null(metadata) & is.null(metadata$sample_name)) stop("metadata should contain a column: sample_name")
+    if (!is.null(metadata) & is.null(metadata$sample_name)) stop("metadata should contain a column: sample_name")
 
     # Retrieve  the required files. ----
 
@@ -66,7 +66,6 @@ import_samples_monocle <- function(folder, samples, gtf, metadata = NULL) {
 
     p <- progressr::progressor(along = unique(files$sample))
     cds_samples <- future.apply::future_lapply(unique(files$sample), function(current_sample) {
-
         # Generate initial cell_data_set.
         cds <- monocle3::load_mm_data(
             mat_path = files %>% dplyr::filter(sample == current_sample, file == "matrix.mtx") %>% dplyr::pull(.data$path),
@@ -95,7 +94,7 @@ import_samples_monocle <- function(folder, samples, gtf, metadata = NULL) {
 
     # Add the names to the list.
     base::names(cds_samples) <- base::vapply(cds_samples, FUN = function(x) {
-        base::levels(SummarizedExperiment::colData(x)$sample_name)
+        base::levels(monocle3::pData(x)$sample_name)
     }, "")
 
     # Combine samples.
@@ -104,16 +103,15 @@ import_samples_monocle <- function(folder, samples, gtf, metadata = NULL) {
     SummarizedExperiment::colData(cds_combined)$sample_name <- NULL
 
     # Add metadata.
-    if(!is.null(metadata)){
+    if (!is.null(metadata)) {
         futile.logger::flog.info("import_samples_monocle: Adding metadata.")
 
         # Add the metadata to the cds object.
-        monocle3::pData(cds) <- monocle3::pData(cds) %>%
+        monocle3::pData(cds_combined) <- monocle3::pData(cds_combined) %>%
             tibble::as_tibble(rownames = "cell_id") %>%
-            dplyr::left_join(metadata, by = "sample_name") %>%
+            dplyr::left_join(metadata, by = c("sample" = "sample_name")) %>%
             tibble::column_to_rownames("cell_id") %>%
             S4Vectors::DataFrame()
-
     }
 
     # Return combined samples.
