@@ -78,7 +78,7 @@ import_samples_monocle <- function(folder, samples, gtf, metadata = NULL) {
         )
 
         # Add additional metadata from the GTF.
-        SummarizedExperiment::rowData(cds) <- SummarizedExperiment::rowData(cds) %>%
+        monocle3::fData(cds) <- monocle3::fData(cds) %>%
             tibble::as_tibble(rownames = "gene_id") %>%
             dplyr::left_join(data_gtf, by = "gene_id") %>%
             tibble::column_to_rownames("gene_id") %>%
@@ -108,8 +108,12 @@ import_samples_monocle <- function(folder, samples, gtf, metadata = NULL) {
         futile.logger::flog.info("import_samples_monocle: Adding metadata.")
 
         # Add the metadata to the cds object.
-        monocle3::pData(cds_combined) <- S4Vectors::merge(monocle3::pData(cds_combined), metadata, by.x = 'sample', by.y = 'sample_name', all.x = TRUE)
-        base::rownames(monocle3::pData(cds_combined)) <- base::sprintf("%s_%s", monocle3::pData(cds_combined)$cell, monocle3::pData(cds_combined)$sample)
+        monocle3::pData(cds) <- monocle3::pData(cds) %>%
+            tibble::as_tibble(rownames = "cell_id") %>%
+            dplyr::left_join(metadata, by = "sample_name") %>%
+            tibble::column_to_rownames("cell_id") %>%
+            S4Vectors::DataFrame()
+
     }
 
     # Return combined samples.

@@ -67,10 +67,13 @@ plot_kneeplot <- function(folder, samples, umi_threshold = NULL) {
         # Retrieve total UMI count per cell. ----
         data_umi <- readr::read_tsv(path_umi, col_names = "n_umi", col_types = "i") %>%
             # Add UMI rank.
-            dplyr::mutate(rank_umi = dplyr::min_rank(- n_umi))
+            dplyr::mutate(
+                rank_umi = dplyr::min_rank(- n_umi),
+                sample = current_sample
+            )
 
         # Generate knee-plot ----
-        plot_knee <- ggplot2::ggplot(data_umi, ggplot2::aes(x = rank_umi, y = n_umi)) +
+        plot_knee <- ggplot2::ggplot(data_umi, ggplot2::aes(x = rank_umi, y = n_umi, group = sample)) +
             ggplot2::geom_line(lwd = 1) +
             ggplot2::scale_x_log10() +
             ggplot2::scale_y_log10() +
@@ -97,6 +100,7 @@ plot_kneeplot <- function(folder, samples, umi_threshold = NULL) {
 
         # Return plot.
         return(plot_knee)
+
     }, future.seed = TRUE)
 
     return(knee_samples)
