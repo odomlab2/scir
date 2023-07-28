@@ -33,17 +33,17 @@ import_samples_monocle <- function(folder, samples, gtf, metadata = NULL) {
 
     files <- files %>%
         # Only use the GeneFull/Filtered data.
-        dplyr::filter(base::grepl("GeneFull/filtered/", .data$path)) %>%
+        dplyr::filter(base::grepl("GeneFull/filtered/", path)) %>%
         # Retrieve features from files.
         dplyr::mutate(
             # Retrieve the sample name from the path.
-            sample = base::sub("_Solo.out.*", "", base::sub("/$|^/", "", base::sub(folder, "", .data$path))),
+            sample = base::sub("_Solo.out.*", "", base::sub("/$|^/", "", base::sub(folder, "", path))),
             # Remove everything after the last underscore.
-            sample = base::sub("_[^_]*$", "", .data$sample),
-            file = base::basename(.data$path)
+            sample = base::sub("_[^_]*$", "", sample),
+            file = base::basename(path)
         ) %>%
         # Filter the specified samples.
-        dplyr::filter(.data$sample %in% samples)
+        dplyr::filter(sample %in% samples)
 
     # Retrieve the GTF file. ----
 
@@ -52,11 +52,19 @@ import_samples_monocle <- function(folder, samples, gtf, metadata = NULL) {
     data_gtf <- rtracklayer::import(gtf, format = "gff") %>%
         tibble::as_tibble() %>%
         dplyr::filter(
-            .data$type == "gene",
-            !base::is.na(.data$gene_id)
+            type == "gene",
+            !base::is.na(gene_id)
+        ) %>%
+        # Subset on classes-of-interest.
+        dplyr::filter(
+            base::grepl("protein_coding|lncRNA|IG_.*_gene", gene_type)
         ) %>%
         dplyr::distinct(
-            .data$seqnames, .data$start, .data$end, .data$width, .data$strand, .data$gene_id, .data$gene_type, .data$gene_name
+            seqnames, start, end, strand, gene_id, gene_type, gene_name
+        ) %>%
+        # Change names in order not to conflict with GRanges.
+        dplyr::select(
+            gene_chr = seqnames, gene_start = start, gene_end = end, gene_strand = strand, gene_id, gene_type, gene_name
         )
 
 
@@ -66,15 +74,19 @@ import_samples_monocle <- function(folder, samples, gtf, metadata = NULL) {
 
     p <- progressr::progressor(along = unique(files$sample))
     cds_samples <- future.apply::future_lapply(unique(files$sample), function(current_sample) {
+
         # Generate initial cell_data_set.
         cds <- monocle3::load_mm_data(
-            mat_path = files %>% dplyr::filter(sample == current_sample, file == "matrix.mtx") %>% dplyr::pull(.data$path),
-            feature_anno_path = files %>% dplyr::filter(sample == current_sample, file == "features.tsv") %>% dplyr::pull(.data$path),
-            cell_anno_path = files %>% dplyr::filter(sample == current_sample, file == "barcodes_converted.tsv") %>% dplyr::pull(.data$path),
+            mat_path = files %>% dplyr::filter(sample == current_sample, file == "matrix.mtx") %>% dplyr::pull(path),
+            feature_anno_path = files %>% dplyr::filter(sample == current_sample, file == "features.tsv") %>% dplyr::pull(path),
+            cell_anno_path = files %>% dplyr::filter(sample == current_sample, file == "barcodes_converted.tsv") %>% dplyr::pull(path),
             feature_metadata_column_names = c("gene_short_name", "type"),
             # Use all cells based on the STARSolo threshold.
             umi_cutoff = 0
         )
+
+        # Subset on genes.
+        cds <- cds[SummarizedExperiment::rowData(cds)$gene_short_name %in% data_gtf$gene_name,]
 
         # Add additional metadata from the GTF.
         monocle3::fData(cds) <- monocle3::fData(cds) %>%
