@@ -16,12 +16,15 @@
 #'
 #' @importFrom dplyr %>%
 #' @import ggplot2
+#' @import patchwork
 #' @export
 plot_features <- function(cds, limits_mt = c(0, .02), limits_expr = c(0, 10000)) {
   # Input validation. ----
   checkmate::checkClass(cds, classes = "cell_data_set")
 
   # Determine rel. exprs. of MT-genes over total expression. ----
+
+  futile.logger::flog.info("plot_features: Calculating rel. Mt content.")
 
   # Define mitochondrial genes.
   genes_mt <- base::which(monocle3::fData(cds)$gene_chr == "chrM")
@@ -31,6 +34,7 @@ plot_features <- function(cds, limits_mt = c(0, .02), limits_expr = c(0, 10000))
   monocle3::pData(cds)$rel_mt <- total_exprs_mt / total_exprs
 
   ## Visualize mitochondrial gene expression. ----
+  futile.logger::flog.info("plot_features: Generating Mt-plot")
   plot_mt <- monocle3::pData(cds) %>%
     tibble::as_tibble() %>%
     ggplot2::ggplot(., ggplot2::aes(x = "MT", y = rel_mt, fill = "MT")) +
@@ -41,6 +45,7 @@ plot_features <- function(cds, limits_mt = c(0, .02), limits_expr = c(0, 10000))
     scir::theme_ggplot()
 
   ## Visualize total UMI and no. of genes expressed. ----
+  futile.logger::flog.info("plot_features: Generating expression + UMI plot")
 
   plot_expr <- monocle3::pData(cds) %>%
     tibble::as_tibble() %>%
