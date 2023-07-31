@@ -5,7 +5,7 @@
 #' - Number of UMI.
 #'
 #' Within the expression plot, the mean and mean + 3 * sd are indicated.
-#' @param cds (character): Folder containing the results of STAR / STARSolo.
+#' @param cds (cell_data_set): cell_data_set of monocle3.
 #' @param limits_mt (numeric): Limits for the y-axis of the mitochondrial expression plot.
 #' @param limits_expr (numeric): Limits for the y-axis of the number of expressed genes and UMI plot.
 #'
@@ -18,7 +18,7 @@
 #' @import ggplot2
 #' @import patchwork
 #' @export
-plot_features <- function(cds, limits_mt = c(0, .02), limits_expr = c(0, 10000)) {
+plot_features <- function(cds, limits_mt = c(0, .02), limits_expr = c(0, 15000)) {
   # Input validation. ----
   checkmate::checkClass(cds, classes = "cell_data_set")
 
@@ -29,8 +29,8 @@ plot_features <- function(cds, limits_mt = c(0, .02), limits_expr = c(0, 10000))
   # Define mitochondrial genes.
   genes_mt <- base::which(monocle3::fData(cds)$gene_chr == "chrM")
 
-  total_exprs_mt <- Matrix::colSums(monocle3::normalized_counts(cds[genes_mt], norm_method = "log"))
-  total_exprs <- Matrix::colSums(monocle3::normalized_counts(cds, norm_method = "log"))
+  total_exprs_mt <- Matrix::colSums(monocle3::exprs(cds[genes_mt]))
+  total_exprs <- Matrix::colSums(monocle3::exprs(cds))
   monocle3::pData(cds)$rel_mt <- total_exprs_mt / total_exprs
 
   ## Visualize mitochondrial gene expression. ----
@@ -47,12 +47,14 @@ plot_features <- function(cds, limits_mt = c(0, .02), limits_expr = c(0, 10000))
   ## Visualize total UMI and no. of genes expressed. ----
   futile.logger::flog.info("plot_features: Generating expression + UMI plot")
 
+  if(is.null(monocle3::pData(cds)$num_genes_expressed)) cds <- monocle3::detect_genes(cds)
+
   plot_expr <- monocle3::pData(cds) %>%
     tibble::as_tibble() %>%
     dplyr::select("No. expressed genes" = num_genes_expressed, "No. UMI" = n.umi) %>%
     tidyr::gather(key = "variable", value = "value") %>%
     ggplot2::ggplot(., ggplot2::aes(x = variable, y = value, fill = variable, group = variable)) +
-    ggplot2::scale_y_continuous(labels = scales::comma_format(), limits = c(0, 10000)) +
+    ggplot2::scale_y_continuous(labels = scales::comma_format(), limits = limits_expr) +
     ggplot2::labs(x = "<sub>Features per cell</sub>", y = "Frequency") +
     ggplot2::scale_fill_manual(values = c("#F3BFB3", "#5EA9BE"), guide = "none") +
     scir::theme_ggplot() +
@@ -63,7 +65,7 @@ plot_features <- function(cds, limits_mt = c(0, .02), limits_expr = c(0, 10000))
         y <- base::mean(x) + 3 * stats::sd(x)
         base::data.frame(y = y[1], ymin = y[1], ymax = y[1])
       },
-      geom = "errorbar", color = "red", width = .75, size = 1.25
+      geom = "errorbar", color = "red", width = .75, lwd = 1.25
     ) +
     ggplot2::stat_summary(
       fun.data = function(x) {
@@ -80,7 +82,7 @@ plot_features <- function(cds, limits_mt = c(0, .02), limits_expr = c(0, 10000))
         y <- base::mean(x)
         base::data.frame(y = y[1], ymin = y[1], ymax = y[1])
       },
-      geom = "errorbar", color = "black", width = .75, size = 1.25
+      geom = "errorbar", color = "black", width = .75, lwd = 1.25
     ) +
     ggplot2::stat_summary(
       fun = "mean", colour = "black", size = 3,
@@ -90,5 +92,5 @@ plot_features <- function(cds, limits_mt = c(0, .02), limits_expr = c(0, 10000))
     )
 
   # Return combined plot. ----
-  plot_mt + plot_expr + patchwork::plot_layout(widths = c(1, 2)) + patchwork::plot_annotation(tag_levels = "a")
+  patchwork::wrap_plots(plot_mt, plot_expr, ncol = 2, widths = c(1, 3)) + patchwork::plot_annotation(tag_levels = "a")
 }
