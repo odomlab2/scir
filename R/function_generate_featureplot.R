@@ -47,7 +47,7 @@ plot_features <- function(cds, limits_mt = c(0, .02), limits_expr = c(0, 15000))
   ## Visualize total UMI and no. of genes expressed. ----
   futile.logger::flog.info("plot_features: Generating expression + UMI plot")
 
-  if(is.null(monocle3::pData(cds)$num_genes_expressed)) cds <- monocle3::detect_genes(cds)
+  if (is.null(monocle3::pData(cds)$num_genes_expressed)) cds <- monocle3::detect_genes(cds)
 
   plot_expr <- monocle3::pData(cds) %>%
     tibble::as_tibble() %>%
