@@ -129,6 +129,9 @@ import_samples_monocle <- function(folder, samples, gtf, metadata = NULL) {
             S4Vectors::DataFrame()
     }
 
+    # Add the gene Id to fData as first column.
+    monocle3::fData(cds_combined) <- S4Vectors::cbind(data.frame(id = base::gsub("\\..*", "", S4Vectors::rownames(cds_combined))), monocle3::fData(cds_combined))
+
     # Return combined samples.
     return(cds_combined)
 }
