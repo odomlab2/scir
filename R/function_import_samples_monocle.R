@@ -133,7 +133,7 @@ import_samples_monocle <- function(folder, samples, gtf, metadata = NULL) {
     monocle3::fData(cds_combined) <- S4Vectors::cbind(data.frame(id = base::gsub("\\..*", "", S4Vectors::rownames(cds_combined))), monocle3::fData(cds_combined))
 
     # Add log10 umi.
-    cds_combined$log.n.umi <- log10(cds$n.umi)
+    cds_combined$log.n.umi <- log10(cds_combined$n.umi)
 
     # Return combined samples.
     return(cds_combined)
