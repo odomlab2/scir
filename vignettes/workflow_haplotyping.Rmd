@@ -1,0 +1,86 @@
+---
+title: "Analyzing Xi/Xa ratios (haplotyping)"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{workflow_haplotyping}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+In this vignette, we detail the basic premise of analyzing inactive vs. active (Xi / Xa) ratios for genes. In this vignette, we assume the sci-seqv3 data has been analyzed with the optional haplotyping procedure as implemented in [sci-rocket](https://github.com/odomlab2/sci-rocket).
+
+```{r load_libs}
+library(dplyr)
+library(scir)
+```
+## Import data into a `cell_data_set`
+
+```{r load_cds}
+cds <- scir::import_samples_monocle(
+  folder = '/omics/groups/OE0538/internal/projects/manuscript_scirocket/workflow/test_haplotyping/alignment/', 
+  samples = 'liver', 
+  gtf = '/omics/groups/OE0538/internal/projects/sharedData/GRCm39/annotation/gencode.vM31.basic.annotation.gtf')
+```
+
+Additional processing, such as UMI-filtering and doublet-detection etc. can be performed prior to subsequent analysis to filter out artifacts and select for a subset of *true* cells.
+
+## Determine Xa/Xi status per cell and bulk gene-wise status.
+
+```{r determine_XaXi}
+data_XaXi <- scir::determine_XaXi_signal(
+  cds, 
+  # Path to H1/H2/UA counts.
+  path_counts = "/omics/groups/OE0538/internal/projects/manuscript_scirocket/workflow/test_haplotyping/haplotyping/liver_B6_CAST_EiJ_haplotagged_readcounts.txt", 
+  # Number of counts (per cell) to determine cell-wise Xa/Xi status.
+  min_counts_cells = 2,
+  # Min. ratio of H1 vs. H2 to determine Xa/Xi.
+  ratioXa = 0.1
+)
+```
+
+## Visualize the Xa/Xi status of cells.
+
+```{r plot_cell_status}
+# Determine percentage of cells supporting H1 or H2 as Xa.
+cell_status_X_label <- data_XaXi$cell_XaXi %>%
+  dplyr::group_by(Xa_cell) %>%
+  dplyr::summarise(
+    totalN = dplyr::n(),
+    total_H1 = max(total_H1) * 1.1,
+    total_H2 = max(total_H2) * 1.1
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(totalN_perc = sprintf('%s%%', round((totalN / sum(totalN)) * 100, 2)))
+
+data_XaXi$cell_XaXi %>%
+  ggplot2::ggplot(., ggplot2::aes(x = total_H1, y = total_H2, fill = Xa_cell)) +
+  ggplot2::geom_point(shape = 21, size = 1.5) +
+  ggplot2::scale_fill_manual('Xa', values = c('H1' = 'hotpink', 'H2' = 'darkblue', 'UA' = 'grey90')) +
+  ggplot2::scale_color_manual('Xa', values = c('H1' = 'hotpink', 'H2' = 'darkblue', 'UA' = 'grey30')) +
+  ggplot2::guides(color = 'none') +
+  ggplot2::labs(x = "Σ(H1-reads)", y = "Σ(H2-reads)") +
+  ggrepel::geom_text_repel(data = cell_status_X_label, ggplot2::aes(label = totalN_perc, color = Xa_cell)) +
+  scir::theme_ggplot()
+```
+
+## Visualize the Xa/Xi ratio of chromosome X genes.
+```{r plot_genes}
+data_XaXi$gene_XaXi %>% 
+  # Filter on min. H1/H2 reads.
+  dplyr::filter(total >= 50) %>% 
+  # Plot.
+  ggplot2::ggplot(., ggplot2::aes(x = total, y = ratio, label = gene_short_name)) +
+  ggplot2::geom_point(size = 1.5) +
+  ggplot2::scale_x_continuous(trans = scales::pseudo_log_trans(), breaks = c(50, 100, 1000, 10000), limits = c(50, 15000)) +
+  ggplot2::scale_y_continuous(limits = c(0, 1)) +
+  ggplot2::labs(x = "Counts: Xa + Xi", y = "Ratio: Xi / (Xi + Xa)") +
+  ggrepel::geom_text_repel() +
+  scir::theme_ggplot()
+```

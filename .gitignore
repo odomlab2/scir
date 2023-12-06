@@ -4,3 +4,6 @@
 .Ruserdata
 dev/
 scir.Rproj
+inst/doc
+/doc/
+/Meta/

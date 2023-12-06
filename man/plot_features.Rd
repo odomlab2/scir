@@ -4,16 +4,25 @@
 \alias{plot_features}
 \title{Generates an overview of common scRNA QC-features.}
 \usage{
-plot_features(cds)
+plot_features(cds, limits_mt = c(0, 0.02), limits_expr = c(0, 15000))
 }
 \arguments{
-\item{cds}{(character): Folder containing the results of STAR / STARSolo.}
+\item{cds}{(cell_data_set): cell_data_set of monocle3.}
+
+\item{limits_mt}{(numeric): Limits for the y-axis of the mitochondrial expression plot.}
+
+\item{limits_expr}{(numeric): Limits for the y-axis of the number of expressed genes and UMI plot.}
 }
 \value{
 (ggplot2): ggplot2 object.
 }
 \description{
-Generates an overview of common scRNA QC-features.
+This generates figures for the following QC-features:
+- Relative mitochondrial expression.
+- Number of expressed genes.
+- Number of UMI.
+
+Within the expression plot, the mean and mean + 3 * sd are indicated.
 }
 \examples{
 1 + 1

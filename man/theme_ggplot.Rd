@@ -10,5 +10,5 @@ theme_ggplot()
 (list): ggplot theme list.
 }
 \description{
-Common theme.
+Common theme for ggplot2.
 }
