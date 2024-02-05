@@ -2,7 +2,7 @@
 #' @description Import one or multiple sci-RNA-seqv3 STARSolo (filtered) matrices into
 #' a combined cds object with correct gene-annotations.
 #'
-#' @param folder (character): Folder containing the results of STAR / STARSolo (GeneFull/filtered).
+#' @param folder (character): Folder containing the results of STAR / STARSolo (GeneFull_Ex50pAS/filtered).
 #' @param samples (character): Samples to import (will search for files).
 #' @param gtf (character): Path to GTF file used during alignment and for annotation purposes.
 #' @param metadata (tibble): Additional metadata to add to cell_data_set. Should contain a sample_name column.
@@ -32,8 +32,8 @@ import_samples_monocle <- function(folder, samples, gtf, metadata = NULL) {
     )
 
     files <- files %>%
-        # Only use the GeneFull/Filtered data.
-        dplyr::filter(base::grepl("GeneFull/filtered/", path)) %>%
+        # Only use the GeneFull_Ex50pAS/Filtered data.
+        dplyr::filter(base::grepl("GeneFull_Ex50pAS/filtered/", path)) %>%
         # Retrieve features from files.
         dplyr::mutate(
             # Retrieve the sample name from the path.

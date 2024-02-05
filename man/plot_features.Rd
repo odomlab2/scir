@@ -4,14 +4,10 @@
 \alias{plot_features}
 \title{Generates an overview of common scRNA QC-features.}
 \usage{
-plot_features(cds, limits_mt = c(0, 0.02), limits_expr = c(0, 15000))
+plot_features(seurat)
 }
 \arguments{
-\item{cds}{(cell_data_set): cell_data_set of monocle3.}
-
-\item{limits_mt}{(numeric): Limits for the y-axis of the mitochondrial expression plot.}
-
-\item{limits_expr}{(numeric): Limits for the y-axis of the number of expressed genes and UMI plot.}
+\item{seurat}{(Seurat): Seurat object.}
 }
 \value{
 (ggplot2): ggplot2 object.

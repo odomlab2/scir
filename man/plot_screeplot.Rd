@@ -2,12 +2,12 @@
 % Please edit documentation in R/function_generate_screeplot.R
 \name{plot_screeplot}
 \alias{plot_screeplot}
-\title{Generates scree-plot for monocle3 object.}
+\title{Generates scree-plot for Seurat object.}
 \usage{
-plot_screeplot(cds, pc_total = 75, pc_chosen = NULL, pc_threshold = 0.1)
+plot_screeplot(seurat, pc_total = 75, pc_chosen = NULL, pc_threshold = 0.01)
 }
 \arguments{
-\item{cds}{(cell_data_set): cell_data_set with preprocess_cds performed.}
+\item{seurat}{(Seurat): Seurat with PCA performed.}
 
 \item{pc_total}{(integer): Total principal components to plot.}
 
@@ -19,7 +19,7 @@ plot_screeplot(cds, pc_total = 75, pc_chosen = NULL, pc_threshold = 0.1)
 (ggplot2): ggplot2 object.
 }
 \description{
-Generates scree-plot for monocle3 object.
+Generates scree-plot for Seurat object.
 }
 \examples{
 1 + 1

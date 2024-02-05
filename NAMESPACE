@@ -2,6 +2,7 @@
 
 export(determine_XaXi_signal)
 export(import_samples_monocle)
+export(import_samples_seurat)
 export(plot_features)
 export(plot_kneeplot)
 export(plot_screeplot)

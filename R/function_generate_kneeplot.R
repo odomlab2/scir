@@ -31,7 +31,7 @@ plot_kneeplot <- function(folder, samples, umi_threshold = NULL) {
 
   files <- files %>%
     # Only use the Filtered data.
-    dplyr::filter(base::grepl("GeneFull/filtered/", .data$path) | base::grepl("UMIperCellSorted.txt", .data$path)) %>%
+    dplyr::filter(base::grepl("GeneFull_Ex50pAS/filtered/", .data$path) | base::grepl("UMIperCellSorted.txt", .data$path)) %>%
     # Retrieve features from files.
     dplyr::mutate(
       # Retrieve the sample name from the path.
