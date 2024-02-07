@@ -1,7 +1,7 @@
 #' @title Determine Xa/Xi status from haplotyping data.
 #' @description Determines cell-wise Xa/Xi status and Xa/Xi status of chromosome X genes.
 #'
-#' @param cds (cell_data_set): cell_data_set of monocle3.
+#' @param seurat (cell_data_set): cell_data_set of monocle3.
 #' @param path_counts (str): Path to the H1/H2/UA counts table.
 #' @param min_counts_cells (numeric): Min. number of H1 or H2 counts needed to determine Xa/Xi status for each cell.
 #' @param ratioXa (numeric): Threshold for Xa/Xi ratio to call H1 or H2 as Xa/Xi.
@@ -13,9 +13,9 @@
 #'
 #' @importFrom dplyr %>%
 #' @export
-determine_XaXi_signal <- function(cds, path_counts, min_counts_cells = 2, ratioXa = 0.1){
+determine_XaXi_signal <- function(seurat, path_counts, min_counts_cells = 2, ratioXa = 0.1){
     # Input validation ----
-    checkmate::assertClass(cds, "cell_data_set")
+    checkmate::assertClass(seurat, "Seurat")
     checkmate::assertFile(path_counts, access = 'r')
     checkmate::assertNumber(min_counts_cells, null.ok = FALSE)
     checkmate::assertNumber(ratioXa, null.ok = FALSE)
@@ -26,26 +26,24 @@ determine_XaXi_signal <- function(cds, path_counts, min_counts_cells = 2, ratioX
     counts <- data.table::fread(file = path_counts, sep = "\t")
 
     # Subset on cells.
-    counts <- counts[counts$cell %in% colnames(cds), ]
+    counts <- counts[counts$cell %in% colnames(seurat), ]
 
     # Subset on chromosome X genes.
-    gene_info <- tibble::as_tibble(monocle3::fData(cds),  rownames = 'gene') %>%
-        dplyr::filter(gene_chr == 'chrX') %>%
-        dplyr::select(gene, gene_short_name)
+    genes_X <- seurat[["RNA"]][[]] %>% dplyr::filter(gene_chr == "chrX") %>% dplyr::distinct(gene_name, gene_id)
 
     # Add gene-name to counts.
     counts <- counts %>%
         dplyr::inner_join(
-            y = gene_info,
-            by = 'gene'
+            y = genes_X,
+            by = c('gene' = 'gene_id')
         )
 
     # Determine cell-wise Xa/Xi status ----
 
-    futile.logger::flog.info("determine_XiXa_signal: Determining Xa/Xi per cell (%s); filtering cells with <%s H1 or H2 counts", ncol(cds), min_counts_cells)
+    futile.logger::flog.info("determine_XiXa_signal: Determining Xa/Xi per cell (n = %s); filtering cells with <%s H1 or H2 counts", ncol(seurat), min_counts_cells)
 
     # Use summed H1/H2 counts over all chrX genes (except Xist/Tsix)
-    cell_XaXi <- counts[! counts$gene_short_name %in% c('Xist', 'Tsix'), ] %>%
+    cell_XaXi <- counts[! counts$gene_name %in% c('Xist', 'Tsix'), ] %>%
         dplyr::group_by(cell) %>%
         dplyr::summarise(
             total_H1 = sum(H1, na.rm = T),
@@ -77,7 +75,7 @@ determine_XaXi_signal <- function(cds, path_counts, min_counts_cells = 2, ratioX
     gene_XaXi <- counts %>%
         dplyr::left_join(cell_XaXi, by = 'cell') %>%
         dplyr::filter(Xi_cell != "UA" & Xa_cell != "UA") %>%
-        dplyr::group_by(gene_short_name) %>%
+        dplyr::group_by(gene_name) %>%
         dplyr::summarise(
             Xa_gene = sum(dplyr::case_when(
                 Xa_cell == "H1" ~ H1,

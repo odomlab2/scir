@@ -54,19 +54,7 @@ import_samples_seurat <- function(folder, samples, gtf, metadata = NULL) {
         dplyr::filter(
             type == "gene",
             !base::is.na(gene_id)
-        ) %>%
-        # Remove predicted genes.
-        dplyr::filter(
-            !base::grepl("^Gm[0-9]", gene_name) | gene_name == 'Gm2a'
-        ) %>%
-        dplyr::distinct(
-            seqnames, start, end, strand, gene_id, gene_type, gene_name
-        ) %>%
-        # Change names in order not to conflict with GRanges.
-        dplyr::select(
-            gene_chr = seqnames, gene_start = start, gene_end = end, gene_strand = strand, gene_id, gene_type, gene_name
-        ) %>%
-        dplyr::filter(!duplicated(gene_name))
+        )
 
     # Subset on classes-of-interest.
     if ("gene_type" %in% colnames(data_gtf)){
@@ -75,6 +63,31 @@ import_samples_seurat <- function(folder, samples, gtf, metadata = NULL) {
         )
     }
 
+    # Mouse-specific filtering.
+    if ("mgi_id" %in% colnames(data_gtf)){
+        # Remove predicted genes.
+        data_gtf <- data_gtf %>%
+            dplyr::filter(
+                !base::grepl("^Gm[0-9]", gene_name) | gene_name == 'Gm2a'
+            ) %>%
+            # Remove RIKEN lncRNA genes.
+            dplyr::filter(
+                ! (base::grepl("Rik$", gene_name) & gene_type == 'lncRNA')
+            ) %>%
+            # Remove genes without a gene-name.
+            dplyr::filter(!grepl("ENSMUS", gene_name))
+    }
+
+    # Clean-up.
+    data_gtf <- data_gtf %>%
+        dplyr::distinct(
+            seqnames, start, end, strand, gene_id, gene_type, gene_name
+        ) %>%
+        # Change names in order not to conflict with GRanges.
+        dplyr::select(
+            gene_chr = seqnames, gene_start = start, gene_end = end, gene_strand = strand, gene_id, gene_type, gene_name
+        ) %>%
+        dplyr::filter(!duplicated(gene_name))
 
     # Generate a seurat object per sample ----
 
@@ -107,7 +120,7 @@ import_samples_seurat <- function(folder, samples, gtf, metadata = NULL) {
     }, future.seed = TRUE)
 
     # Merge multiple samples. ----
-    seurat_combined <- merge(seurat_samples[[1]], y = seurat_samples[2:length(seurat_samples)], project = "FCG")
+    seurat_combined <- merge(seurat_samples[[1]], y = seurat_samples[2:length(seurat_samples)])
     seurat_combined <- SeuratObject::JoinLayers(seurat_combined,  assay = "RNA")
 
     # Add GTF information.

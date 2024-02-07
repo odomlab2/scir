@@ -9,13 +9,5 @@
 To install this package and the vignettes, use:
 
 ```r
-devtools::install_github("odomlab2/scir", build_vignettes = TRUE)
-```
-
-## Vignettes
-
-To view several vignettes explaining the basic functions of this package, use:
-
-```r
-browseVignettes('scir')
+devtools::install_github("odomlab2/scir")
 ```

@@ -4,10 +4,10 @@
 \alias{determine_XaXi_signal}
 \title{Determine Xa/Xi status from haplotyping data.}
 \usage{
-determine_XaXi_signal(cds, path_counts, min_counts_cells = 2, ratioXa = 0.1)
+determine_XaXi_signal(seurat, path_counts, min_counts_cells = 2, ratioXa = 0.1)
 }
 \arguments{
-\item{cds}{(cell_data_set): cell_data_set of monocle3.}
+\item{seurat}{(cell_data_set): cell_data_set of monocle3.}
 
 \item{path_counts}{(str): Path to the H1/H2/UA counts table.}
 

@@ -54,22 +54,40 @@ import_samples_monocle <- function(folder, samples, gtf, metadata = NULL) {
         dplyr::filter(
             type == "gene",
             !base::is.na(gene_id)
-        ) %>%
-        # Subset on classes-of-interest.
-        dplyr::filter(
+        )
+
+    # Subset on classes-of-interest.
+    if ("gene_type" %in% colnames(data_gtf)){
+        data_gtf <- data_gtf %>% dplyr::filter(
             base::grepl("protein_coding|lncRNA|IG_.*_gene", gene_type)
-        ) %>%
+        )
+    }
+
+    # Mouse-specific filtering.
+    if ("mgi_id" %in% colnames(data_gtf)){
         # Remove predicted genes.
-        dplyr::filter(
-            !base::grepl("^Gm[0-9]", gene_name) | gene_name == 'Gm2a'
-        ) %>%
+        data_gtf <- data_gtf %>%
+            dplyr::filter(
+                !base::grepl("^Gm[0-9]", gene_name) | gene_name == 'Gm2a'
+            ) %>%
+            # Remove RIKEN lncRNA genes.
+            dplyr::filter(
+                ! (base::grepl("Rik$", gene_name) & gene_type == 'lncRNA')
+            ) %>%
+            # Remove genes without a gene-name.
+            dplyr::filter(!grepl("ENSMUS", gene_name))
+    }
+
+    # Clean-up.
+    data_gtf <- data_gtf %>%
         dplyr::distinct(
             seqnames, start, end, strand, gene_id, gene_type, gene_name
         ) %>%
         # Change names in order not to conflict with GRanges.
         dplyr::select(
             gene_chr = seqnames, gene_start = start, gene_end = end, gene_strand = strand, gene_id, gene_type, gene_name
-        )
+        ) %>%
+        dplyr::filter(!duplicated(gene_name))
 
 
     # Generate a cell_data_set per sample ----

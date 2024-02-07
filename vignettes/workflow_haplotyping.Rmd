@@ -2,31 +2,36 @@
 title: "Analyzing Xi/Xa ratios (haplotyping)"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{workflow_haplotyping}
+%\VignetteIndexEntry{workflow_haplotyping}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
----
-
-```{r, include = FALSE}
-knitr::opts_chunk$set(
+  ---
+  
+  ```{r, include = FALSE}
+  knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
+  )
+  ```
+  
+  In this vignette, we detail the basic premise of analyzing inactive vs. active (Xi / Xa) ratios for genes. In this vignette, we assume the sci-seqv3 data has been analyzed with the optional haplotyping procedure as implemented in [sci-rocket](https://github.com/odomlab2/sci-rocket).
+  
+  ```{r load_libs}
+  library(dplyr)
+  library(scir)
+  ```
+  ## Import data into a `cell_data_set`
+  
+  ```{r load_cds}
+  metadata <- readr::read_tsv("/omics/groups/OE0538/internal/projects/sexomics/metadata/20240204_csb188_as/csb188_samplesheet_as.tsv", show_col_types = FALSE) %>% 
+dplyr::distinct(sample_name, species, strain1, strain2, experiment_name)
+
+seurat <- scir::import_samples_seurat(
+folder = '/omics/groups/OE0538/internal/projects/sexomics/metadata/20240204_csb188_as/csb188/alignment/', 
+gtf = '/omics/groups/OE0538/internal/projects/sharedData/GRCm39/annotation/gencode.vM31.basic.annotation.gtf',
+samples = unique(metadata$sample_name),
+metadata = metadata
 )
-```
-
-In this vignette, we detail the basic premise of analyzing inactive vs. active (Xi / Xa) ratios for genes. In this vignette, we assume the sci-seqv3 data has been analyzed with the optional haplotyping procedure as implemented in [sci-rocket](https://github.com/odomlab2/sci-rocket).
-
-```{r load_libs}
-library(dplyr)
-library(scir)
-```
-## Import data into a `cell_data_set`
-
-```{r load_cds}
-cds <- scir::import_samples_monocle(
-  folder = '/omics/groups/OE0538/internal/projects/manuscript_scirocket/workflow/test_haplotyping/alignment/', 
-  samples = 'liver', 
-  gtf = '/omics/groups/OE0538/internal/projects/sharedData/GRCm39/annotation/gencode.vM31.basic.annotation.gtf')
 ```
 
 Additional processing, such as UMI-filtering and doublet-detection etc. can be performed prior to subsequent analysis to filter out artifacts and select for a subset of *true* cells.
@@ -34,53 +39,94 @@ Additional processing, such as UMI-filtering and doublet-detection etc. can be p
 ## Determine Xa/Xi status per cell and bulk gene-wise status.
 
 ```{r determine_XaXi}
-data_XaXi <- scir::determine_XaXi_signal(
-  cds, 
+data_XaXi <- list()
+
+data_XaXi$kidney <- scir::determine_XaXi_signal(
+  subset(seurat, sample_name == 'kidney'), 
   # Path to H1/H2/UA counts.
-  path_counts = "/omics/groups/OE0538/internal/projects/manuscript_scirocket/workflow/test_haplotyping/haplotyping/liver_B6_CAST_EiJ_haplotagged_readcounts.txt", 
+  path_counts = "/omics/groups/OE0538/internal/projects/sexomics/metadata/20240204_csb188_as/csb188/haplotyping/kidney_B6_CAST_EiJ_haplotagged_readcounts.txt", 
   # Number of counts (per cell) to determine cell-wise Xa/Xi status.
   min_counts_cells = 2,
   # Min. ratio of H1 vs. H2 to determine Xa/Xi.
   ratioXa = 0.1
+)
+
+data_XaXi$ovary <- scir::determine_XaXi_signal(
+  subset(seurat, sample_name == 'ovary'), 
+  path_counts = "/omics/groups/OE0538/internal/projects/sexomics/metadata/20240204_csb188_as/csb188/haplotyping/ovary_B6_CAST_EiJ_haplotagged_readcounts.txt"
+)
+
+data_XaXi$smallintestine <- scir::determine_XaXi_signal(
+  subset(seurat, sample_name == 'smallintestine'), 
+  # Path to H1/H2/UA counts.
+  path_counts = "/omics/groups/OE0538/internal/projects/sexomics/metadata/20240204_csb188_as/csb188/haplotyping/smallintestine_B6_CAST_EiJ_haplotagged_readcounts.txt"
 )
 ```
 
 ## Visualize the Xa/Xi status of cells.
 
 ```{r plot_cell_status}
-# Determine percentage of cells supporting H1 or H2 as Xa.
-cell_status_X_label <- data_XaXi$cell_XaXi %>%
-  dplyr::group_by(Xa_cell) %>%
-  dplyr::summarise(
-    totalN = dplyr::n(),
-    total_H1 = max(total_H1) * 1.1,
-    total_H2 = max(total_H2) * 1.1
-  ) %>%
-  dplyr::ungroup() %>%
-  dplyr::mutate(totalN_perc = sprintf('%s%%', round((totalN / sum(totalN)) * 100, 2)))
+plots_status <- lapply(data_XaXi, function(x){
+  # Determine percentage of cells supporting H1 or H2 as Xa.
+  cell_status_X_label <- x$cell_XaXi %>%
+    dplyr::group_by(Xa_cell) %>%
+    dplyr::summarise(
+      totalN = dplyr::n(),
+      total_H1 = max(total_H1) * 1.1,
+      total_H2 = max(total_H2) * 1.1
+    ) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(totalN_perc = sprintf('%s%%', round((totalN / sum(totalN)) * 100, 2)))
+  
+  x$cell_XaXi %>%
+    ggplot2::ggplot(., ggplot2::aes(x = total_H1, y = total_H2, fill = Xa_cell)) +
+    ggplot2::geom_point(shape = 21, size = 1.5) +
+    ggplot2::scale_fill_manual('Xa', values = c('H1' = 'hotpink', 'H2' = 'darkblue', 'UA' = 'grey90')) +
+    ggplot2::scale_color_manual('Xa', values = c('H1' = 'hotpink', 'H2' = 'darkblue', 'UA' = 'grey30')) +
+    ggplot2::guides(color = 'none') +
+    ggplot2::labs(x = "Σ(H1-reads)", y = "Σ(H2-reads)") +
+    ggrepel::geom_text_repel(data = cell_status_X_label, ggplot2::aes(label = totalN_perc, color = Xa_cell)) +
+    scir::theme_ggplot()
+})
 
-data_XaXi$cell_XaXi %>%
-  ggplot2::ggplot(., ggplot2::aes(x = total_H1, y = total_H2, fill = Xa_cell)) +
-  ggplot2::geom_point(shape = 21, size = 1.5) +
-  ggplot2::scale_fill_manual('Xa', values = c('H1' = 'hotpink', 'H2' = 'darkblue', 'UA' = 'grey90')) +
-  ggplot2::scale_color_manual('Xa', values = c('H1' = 'hotpink', 'H2' = 'darkblue', 'UA' = 'grey30')) +
-  ggplot2::guides(color = 'none') +
-  ggplot2::labs(x = "Σ(H1-reads)", y = "Σ(H2-reads)") +
-  ggrepel::geom_text_repel(data = cell_status_X_label, ggplot2::aes(label = totalN_perc, color = Xa_cell)) +
-  scir::theme_ggplot()
+names(plots_status) <- names(data_XaXi)
 ```
 
 ## Visualize the Xa/Xi ratio of chromosome X genes.
 ```{r plot_genes}
-data_XaXi$gene_XaXi %>% 
-  # Filter on min. H1/H2 reads.
-  dplyr::filter(total >= 50) %>% 
-  # Plot.
-  ggplot2::ggplot(., ggplot2::aes(x = total, y = ratio, label = gene_short_name)) +
-  ggplot2::geom_point(size = 1.5) +
-  ggplot2::scale_x_continuous(trans = scales::pseudo_log_trans(), breaks = c(50, 100, 1000, 10000), limits = c(50, 15000)) +
-  ggplot2::scale_y_continuous(limits = c(0, 1)) +
-  ggplot2::labs(x = "Counts: Xa + Xi", y = "Ratio: Xi / (Xi + Xa)") +
-  ggrepel::geom_text_repel() +
-  scir::theme_ggplot()
+plots_escapees <- lapply(data_XaXi, function(x){
+  x$gene_XaXi %>% 
+    # Filter on min. H1/H2 reads.
+    dplyr::filter(total >= 50) %>% 
+    # Plot.
+    ggplot2::ggplot(., ggplot2::aes(x = total, y = ratio, label = gene_name)) +
+    ggplot2::geom_point(size = 1.5) +
+    ggplot2::scale_x_continuous(trans = scales::pseudo_log_trans(), breaks = c(50, 100, 1000, 10000), limits = c(50, 5000)) +
+    ggplot2::scale_y_continuous(limits = c(0, 1)) +
+    ggplot2::labs(x = "Counts: Xa + Xi", y = "Ratio: Xi / (Xi + Xa)") +
+    ggrepel::geom_text_repel(size = 3, max.overlaps = 20) +
+    scir::theme_ggplot()
+})
+
+names(plots_escapees) <- names(data_XaXi)
+```
+
+```{r combine_plots}
+plots_status$kidney + plots_status$ovary + plots_status$smallintestine +
+plots_escapees$kidney + plots_escapees$ovary + plots_escapees$smallintestine +
+  patchwork::plot_layout(ncol = 3, heights = c(.66, 1))
+```
+
+```{r compare kidney_intestine}
+data_XaXi$kidney$gene_XaXi %>% 
+  dplyr::inner_join(data_XaXi$smallintestine$gene_XaXi, by = 'gene_name') %>% 
+    dplyr::filter(total.x >= 50 | total.y >= 50) %>% 
+    ggplot2::ggplot(., ggplot2::aes(x = ratio.x, y = ratio.y, label = gene_name)) +
+    ggplot2::geom_point(size = 1.5) +
+    ggplot2::geom_abline(slope = 1) +
+    ggplot2::scale_x_continuous(limits = c(0, 1)) +
+    ggplot2::scale_y_continuous(limits = c(0, 1)) +
+    ggplot2::labs(x = "Ratio - Kidney", y = "Ratio - Small Intestine") +
+    ggrepel::geom_text_repel(size = 3, max.overlaps = 20) +
+    scir::theme_ggplot()
 ```
