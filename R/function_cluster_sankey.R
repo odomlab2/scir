@@ -19,6 +19,7 @@ cluster_sankey <- function(seurat, cluster_prefix, min_transition = 500){
     # Input validation ----
     checkmate::assertClass(seurat, "Seurat")
     checkmate::assertCharacter(cluster_prefix)
+    checkmate::assertNumber(min_transition, null.ok = FALSE)
 
     # Check if the cluster column exists.
     if (!any(grepl(cluster_prefix, colnames(seurat@metadata)))) stop(glue::glue("Cluster column {cluster_prefix} not found in Seurat object."))
