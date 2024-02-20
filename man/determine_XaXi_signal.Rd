@@ -7,7 +7,7 @@
 determine_XaXi_signal(seurat, path_counts, min_counts_cells = 2, ratioXa = 0.1)
 }
 \arguments{
-\item{seurat}{(cell_data_set): cell_data_set of monocle3.}
+\item{seurat}{(Seurat): Seurat object.}
 
 \item{path_counts}{(str): Path to the H1/H2/UA counts table.}
 

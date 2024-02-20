@@ -1,7 +1,7 @@
 #' @title Determine Xa/Xi status from haplotyping data.
 #' @description Determines cell-wise Xa/Xi status and Xa/Xi status of chromosome X genes.
 #'
-#' @param seurat (cell_data_set): cell_data_set of monocle3.
+#' @param seurat (Seurat): Seurat object.
 #' @param path_counts (str): Path to the H1/H2/UA counts table.
 #' @param min_counts_cells (numeric): Min. number of H1 or H2 counts needed to determine Xa/Xi status for each cell.
 #' @param ratioXa (numeric): Threshold for Xa/Xi ratio to call H1 or H2 as Xa/Xi.
